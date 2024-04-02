@@ -1,145 +1,145 @@
-<html>
+<!DOCTYPE html>
+<h1>
+    景點觀光展覽資訊
+</h1>
+<head>
+    <style>
+        table {
+            font-family: Arial, Helvetica, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        td, th {
+            border: 1px solid #ddd;
+            padding: 6px;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #ddd;
+        }
+        th {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            text-align: left;
+            background-color: #04AA6D;
+            color: white;
+        }
+        .inline_display{
+            display: inline-block;
+            margin: right 10px;
+        }
+    </style>
+</head>
 <body>
-<h1>景點觀光展覽資訊</h1><input type="text" id="Str" placeholder="請輸入關鍵字" onchange="SearchData(this.id)">
-<table id = "hw1" class = "table table-striped table-hover">
-  <tr>
-    <th>名稱</th>
-    <th>地點</th>
-    <th>票價</th>
-  </tr>
-</table>
-<button onclick = "PreData()">上一頁</button>
-<span id = "Page" tabindex = "0" class = "clockquote text-nowrap"></span>
-<button onclick = "NextData()">下一頁</button>
-<style>
-table { 
-  font-family: Arial, Helvetica, sans-serif; 
-  border-collapse: collapse; 
-  width: 100%; 
-} 
-td, th { 
-  border: 1px solid #ddd; 
-  padding: 6px; 
-} 
-tr:nth-child(even){background-color: #f2f2f2;} 
-tr:hover {background-color: #ddd;} 
-th { 
-  padding-top: 12px; 
-  padding-bottom: 12px; 
-  text-align: left; 
-  background-color: #04AA6D; 
-  color: white; 
-} 
-</style>
-<script>
-var openUrl = "https://cloud.culture.tw/frontsite/trans/SearchShowAction.do?method=doFindTypeJ&category=6";
-var xhr = new XMLHttpRequest();
-xhr.open('GET', openUrl, true);
-xhr.send();
-xhr.onreadystatechange = function() {
-  if (xhr.readyState == 4 && xhr.status == 200) {
-    window.dataset = JSON.parse(xhr.responseText);
-    addNewData();
-  }
-};
+    <input type="text" id="filter" placeholder="請輸入關鍵字">
+    <table id ="csie" class="table table-striped table-hover">
+        <tr>
+            <th >
+                名稱
+            </th>
+            <th>
+                地點
+            </th>
+            <th>
+                票價
+            </th>
+        </tr>
+    </table>
+    <button onclick="prev_page()">
+        上一頁
+    </button>
+    <p id ="page" class="inline_display"></p>
+    <button onclick="next_page()">
+        下一頁
+    </button>
+    <script>
+        var openUrl =
+        "https://cloud.culture.tw/frontsite/trans/SearchShowAction.do?method=doFindTypeJ&category=6";
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', openUrl, true);
+        xhr.send();
+        var total_pages = 0;
+        var dataset_filter = [];
+        var flag = 0;
+        xhr.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                dataset = JSON.parse(this.responseText);
+                total_pages = Math.ceil(dataset.length / 10);
+                addNewData(dataset);
+            }
+        };
 
-var currentPage = 1;
-var pageSize = 10;
-var filteredData = [];
+        var cur_pages = 1;
+        function addNewData(data) {
+            var myTable = document.getElementById("csie");
+            var data_slice = data.slice(((cur_pages) - 1) * 10, cur_pages * 10);
+            data_slice.forEach(function (data) {
+                var row = myTable.insertRow(-1);
+                row.insertCell(0).innerHTML = data["title"];
+                row.insertCell(1).innerHTML = data['showInfo'][0]["locationName"];
+                row.insertCell(2).innerHTML = data['showInfo'][0]['price'];
+            });
+            show_page();
+        };
 
-function addNewData() {
-  var mytable = document.getElementById("hw1");
-  var Header = mytable.rows[0];
-  mytable.innerHTML = '';
-  mytable.appendChild(Header);
-    
-  var start_index = (currentPage - 1) * pageSize;
-  var end_index = Math.min(start_index + pageSize, window.dataset.length);
-    
-  for (var i = start_index; i < end_index; i++) {
-     var data = window.dataset[i];
-     var row = mytable.insertRow(-1); 
-     row.insertCell(0).innerHTML = data['title']; 
-     row.insertCell(1).innerHTML = data['showInfo'][0]['location'];
-     row.insertCell(2).innerHTML = data['showInfo'][0]['price'];
-  }
-    
-  ShowPage();
-}
+        function Del_ALL_Row () {
+            var myTable = document.getElementById("csie");
+            while (myTable.rows.length > 1) {
+                myTable.deleteRow(1);
+            }
+        };
+        function prev_page() {
+            if (cur_pages == 1) {
+                return;
+            }
+            Del_ALL_Row();
+            cur_pages--;
+            if (flag == 0) {
+                addNewData(dataset);
+            } else {
+                addNewData(dataset_filter);
+            }
+        };
 
-function addSearchData() {
-  var mytable = document.getElementById("hw1");
-  var Header = mytable.rows[0];
-  mytable.innerHTML = '';
-  mytable.appendChild(Header);
-    
-  var start_index = (currentPage - 1) * pageSize;
-  var end_index = Math.min(start_index + pageSize, filteredData.length);
-    
-  for (var i = start_index; i < end_index; i++) {
-    var data = filteredData[i];
-    var row = mytable.insertRow(-1); 
-    row.insertCell(0).innerHTML = data['title']; 
-    row.insertCell(1).innerHTML = data['showInfo'][0]['location'];
-    row.insertCell(2).innerHTML = data['showInfo'][0]['price'];
-  } 
-  ShowPage();
-}
-
-function PreData() {
-  if (currentPage > 1) {
-    currentPage--;
-    if (document.getElementById("Str").value === '') {
-      addNewData();
-    }
-    else {
-      addSearchData();
-    }
-  }
-}
-
-function NextData() {
-  if (currentPage < Math.ceil(window.dataset.length / pageSize)) {
-    currentPage++;
-    if (document.getElementById("Str").value === '') {
-      addNewData();
-    } 
-    else {
-      addSearchData();
-    }
-  }
-}
-
-function ShowPage() {
-  var number = document.getElementById('Page');
-    if (document.getElementById("Str").value === '') {
-      number.innerHTML = currentPage + "/" + Math.ceil(window.dataset.length / pageSize) + "頁";
-    } else {
-      number.innerHTML = currentPage + "/" + Math.ceil(filteredData.length / pageSize) + "頁";
-    }
-}
-
-function SearchData() {
-  var keyword = document.getElementById("Str").value;
-  if (keyword === '') {
-    addNewData();
-    return;
-  }
-    
-  filteredData = window.dataset.filter(function(data) {
-    var title = data['title'];
-    var location = data['showInfo'][0]['location'];
-    var price = data['showInfo'][0]['price'];
-    return title.includes(keyword) || location.includes(keyword) || price.includes(keyword);
-  });
-    
-  currentPage = 1;
-  addSearchData();
-}
-
-document.getElementById("Str").addEventListener("input", function() {
-    SearchData();
-});
-</script>
+        function next_page() {
+            if (cur_pages == total_pages) {
+                return;
+            }
+            Del_ALL_Row();
+            cur_pages++;
+            if (flag == 0) {
+                addNewData(dataset);
+            } else {
+                addNewData(dataset_filter);
+            }
+        };
+        function show_page() {
+            var page = document.getElementById("page");
+            page.innerHTML = cur_pages + "/" + total_pages + " 頁";
+        };
+        // ----------------------search----------------------
+        var fil = document.getElementById("filter");
+        fil.addEventListener("input", (e) => filterData(e.target.value));
+        function filterData(search) {
+            if (search == "") {
+                flag = 0;
+                Del_ALL_Row();
+                total_pages = Math.ceil(dataset.length / 10);
+                cur_pages = 1;
+                addNewData(dataset);
+                return;
+            }
+            flag = 1;
+            Del_ALL_Row();
+            var regex = new RegExp(search);
+            dataset_filter = dataset.filter(function (data) {
+                return regex.test(data["title"]);
+            });
+            total_pages = Math.ceil(dataset_filter.length / 10);
+            cur_pages = 1;
+            addNewData(dataset_filter);
+        };
+    </script>
 </body>
-</html>
